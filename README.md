@@ -1,18 +1,22 @@
-# Lightweight Blockchain-Based Secure Voting System Using Efficient Transaction Validation and Simplified Block Verification
+# Lightweight Multi-Node Blockchain Voting System with Digital Signatures, Validator-Based Consensus, Merkle Verification, and Tamper Detection
 
-This project is an academic research prototype for a private, lightweight blockchain-based electronic voting system. It is not a cryptocurrency, not a Bitcoin clone, and not a production election platform.
+Academic research prototype for:
 
-The prototype demonstrates how votes can be represented as validated blockchain transactions, grouped into tamper-resistant blocks, and counted transparently from an immutable ledger without Ethereum, Solidity, mining, Proof of Work, MetaMask, or external blockchain APIs.
+**“Lightweight Blockchain-Based Secure Voting System Using Efficient Transaction Validation and Simplified Block Verification”**
 
-## Research Focus
+This is not a cryptocurrency, Bitcoin clone, Ethereum app, smart-contract system, or production election platform. It is a locally deployable Flask + SQLite research prototype focused on secure voting, lightweight blockchain validation, transparency, tamper resistance, and small-scale academic experimentation.
 
-- Secure voting with registered voter authentication.
-- Lightweight blockchain architecture for small deployments.
-- Efficient transaction validation before ledger insertion.
-- Simplified block verification using SHA-256 hash checks.
-- Reduced storage overhead by storing voter hashes instead of voter identity.
-- Local private deployment with SQLite and Flask.
-- Transparent blockchain explorer and auditable results.
+## Research Contributions
+
+- ECDSA digital signatures for vote transaction authenticity.
+- SHA-256 transaction hashing and block hashing.
+- Voter privacy through hashed voter identity.
+- Merkle root generation for efficient transaction verification.
+- Full blockchain integrity validation with tamper detection.
+- Simulated 3-node blockchain network.
+- Lightweight validator-based consensus with 2-of-3 majority approval.
+- No Proof of Work, mining, gas fees, Ethereum, Solidity, Ganache, MetaMask, or external blockchain APIs.
+- Research metrics comparing validator consensus with a simulated Proof-of-Work baseline.
 
 ## Tech Stack
 
@@ -21,7 +25,8 @@ The prototype demonstrates how votes can be represented as validated blockchain 
 - SQLite
 - HTML, CSS, JavaScript
 - Bootstrap
-- Custom Python blockchain using `hashlib` SHA-256
+- `hashlib` SHA-256
+- `cryptography` ECDSA signatures
 
 ## Project Structure
 
@@ -33,26 +38,24 @@ Lightweight_Blockchain_Secure_Voting_System/
 ├── blockchain/
 │   ├── block.py
 │   ├── blockchain.py
+│   ├── crypto_utils.py
+│   ├── merkle.py
 │   ├── transaction.py
 │   └── validation.py
 ├── database/
 │   └── db.py
+├── nodes/
+│   ├── network.py
+│   ├── node_a/
+│   ├── node_b/
+│   └── node_c/
 ├── templates/
-│   ├── admin.html
-│   ├── admin_login.html
-│   ├── base.html
-│   ├── blockchain.html
-│   ├── login.html
-│   ├── results.html
-│   └── vote.html
 ├── static/
-│   ├── css/style.css
-│   └── js/main.js
 ├── requirements.txt
 └── README.md
 ```
 
-## Setup Guide
+## Setup
 
 ```bash
 cd Lightweight_Blockchain_Secure_Voting_System
@@ -66,18 +69,23 @@ Open:
 http://127.0.0.1:5000
 ```
 
-The SQLite database is initialized automatically as `voting_system.db`.
+If port 5000 is busy:
+
+```bash
+PORT=5001 python app.py
+```
+
+The SQLite database is created automatically as `voting_system.db`.
 
 ## Sample Credentials
 
 Admin:
 
 ```text
-Username: admin
-Password: admin123
+admin / admin123
 ```
 
-Sample voters:
+Voters:
 
 ```text
 VOTER001 / password123
@@ -85,62 +93,7 @@ VOTER002 / password123
 VOTER003 / password123
 ```
 
-Sample candidates are inserted automatically:
-
-```text
-Alice Sharma
-Bharat Mehta
-Catherine D'Souza
-```
-
-## Architecture Diagram
-
-```mermaid
-flowchart LR
-    A["Voter Login"] --> B["Authentication Module"]
-    B --> C["Voting Module"]
-    C --> D["Vote Transaction Creation"]
-    D --> E["Lightweight Transaction Validation"]
-    E -->|Valid| F["Pending Transaction Pool"]
-    E -->|Invalid| X["Reject Transaction"]
-    F --> G["Lightweight Block Creation"]
-    G --> H["Simplified Block Verification"]
-    H -->|Valid| I["SQLite Blockchain Ledger"]
-    H -->|Invalid| Y["Reject Block"]
-    I --> J["Blockchain Explorer"]
-    I --> K["Result Calculation"]
-    L["Admin Panel"] --> M["Register Voters and Candidates"]
-    L --> N["Start or Stop Election"]
-```
-
-## Voting Flowchart
-
-```mermaid
-flowchart TD
-    Start["Start"] --> Login["Registered voter logs in"]
-    Login --> Active{"Election active?"}
-    Active -->|No| Stop["Voting disabled"]
-    Active -->|Yes| Cast["Select candidate"]
-    Cast --> Tx["Create transaction with voter_hash"]
-    Tx --> Exists{"Voter exists?"}
-    Exists -->|No| Reject["Reject"]
-    Exists -->|Yes| Dup{"Already voted?"}
-    Dup -->|Yes| Reject
-    Dup -->|No| Hash{"Transaction hash valid?"}
-    Hash -->|No| Reject
-    Hash -->|Yes| Pool["Add to pending pool"]
-    Pool --> Block["Create lightweight block"]
-    Block --> Verify{"Previous hash, transaction integrity, block hash valid?"}
-    Verify -->|No| Reject
-    Verify -->|Yes| Ledger["Append to blockchain"]
-    Ledger --> Results["Update transparent results"]
-```
-
-## Methodology
-
-1. Voter registration stores a unique `voter_id`, name, password hash, and voting status.
-2. Authentication uses Flask sessions and Werkzeug password hashing.
-3. A vote is converted into a transaction:
+## Upgraded Transaction Structure
 
 ```json
 {
@@ -148,71 +101,149 @@ flowchart TD
   "voter_hash": "sha256(voter_id)",
   "candidate": "candidate name",
   "timestamp": "UTC timestamp",
-  "transaction_hash": "sha256(canonical transaction payload)"
+  "signature": "ECDSA signature over transaction_hash",
+  "public_key": "voter public key PEM",
+  "transaction_hash": "sha256(canonical payload)"
 }
 ```
 
-4. Transaction validation checks voter existence, duplicate voting status, candidate validity, transaction structure, and transaction hash integrity.
-5. Valid transactions enter a pending pool and are written to the `transactions` table.
-6. Blocks are created using deterministic SHA-256 hashing without Proof of Work.
-7. Block verification checks previous hash correctness, all transaction hashes, and the block hash.
-8. Valid blocks are appended to the SQLite-backed blockchain ledger.
-9. Results are calculated directly from confirmed blockchain transactions.
+The private key is generated locally for each voter in this demo. The blockchain stores the voter hash and public key, not the voter’s plain identity.
 
-## Lightweight Design Contribution
+## Upgraded Block Structure
 
-Traditional blockchain voting prototypes often inherit heavy cryptocurrency concepts: mining, gas fees, smart contracts, distributed consensus, and large storage demands. This system removes those costs for small private deployments.
+```json
+{
+  "index": 1,
+  "timestamp": "UTC timestamp",
+  "transactions": [],
+  "merkle_root": "root hash",
+  "validator_votes": {
+    "node_a": "approved",
+    "node_b": "approved",
+    "node_c": "approved"
+  },
+  "node_status": {},
+  "previous_hash": "previous block hash",
+  "nonce": 1,
+  "current_hash": "block hash",
+  "creation_time_ms": 0.0,
+  "verification_time_ms": 0.0,
+  "consensus_time_ms": 0.0
+}
+```
 
-The contribution is the combination of:
+The nonce is deterministic metadata, not Proof of Work.
 
-- Pre-ledger vote transaction validation.
-- Voter privacy through hashed voter identity.
-- Duplicate prevention using database status before transaction acceptance.
-- Immediate block hash verification instead of Proof of Work.
-- Minimal block fields stored in SQLite.
-- Transparent result calculation from the blockchain ledger.
+## Architecture Diagram
 
-## Database Schema
+```mermaid
+flowchart LR
+    A["Voter Login"] --> B["Session Authentication"]
+    B --> C["Vote Selection"]
+    C --> D["Create Hashed Vote Transaction"]
+    D --> E["ECDSA Signature"]
+    E --> F["Transaction Validation"]
+    F --> G{"Valid?"}
+    G -->|No| R["Reject"]
+    G -->|Yes| H["Pending Transaction Pool"]
+    H --> I["Merkle Root + Block Creation"]
+    I --> J["Block Verification"]
+    J --> K["3 Simulated Validator Nodes"]
+    K --> L{"2 of 3 Approve?"}
+    L -->|No| R
+    L -->|Yes| M["Append to SQLite Blockchain Ledger"]
+    M --> N["Synchronize Node Ledger Copies"]
+    M --> O["Explorer + Results + Metrics"]
+    M --> P["Full Chain Validation"]
+    P --> Q["Tamper Detection Dashboard"]
+```
 
-### voters
+## Voting Methodology
 
-- `voter_id`
-- `name`
-- `password_hash`
-- `has_voted`
-- `created_at`
+1. Admin registers voters and candidates.
+2. Each voter receives a local ECDSA key pair.
+3. Voter logs in with a hashed password-backed account.
+4. Vote is converted into a signed blockchain transaction.
+5. Transaction validation checks:
+   - voter exists
+   - voter has not already voted
+   - candidate exists
+   - voter hash matches authenticated voter
+   - public key matches registered voter key
+   - transaction format is complete
+   - transaction hash is correct
+   - ECDSA signature is valid
+6. Valid transaction enters the pending pool.
+7. A lightweight block is created with a Merkle root.
+8. Each simulated validator node independently verifies the block.
+9. A 2-of-3 validator majority is required.
+10. Accepted blocks are added to the main ledger and synchronized to node ledger copies.
+11. Results are calculated directly from confirmed blockchain transactions.
+12. `validate_chain()` continuously supports health monitoring and tamper detection.
 
-### candidates
+## Full Chain Validation
 
-- `id`
-- `name`
+`validate_chain()` verifies:
 
-### blockchain
+- previous hash linkage
+- block ordering consistency
+- block hash correctness
+- transaction hash integrity
+- ECDSA signature validity
+- Merkle root correctness
 
-- `block_index`
-- `timestamp`
-- `transactions`
-- `previous_hash`
-- `nonce`
-- `current_hash`
-- `creation_time_ms`
-- `verification_time_ms`
+It detects:
 
-### transactions
+- modified transactions
+- broken previous hashes
+- invalid block hashes
+- invalid signatures
+- corrupted Merkle roots
+- out-of-order blocks
 
-- `transaction_id`
-- `voter_hash`
-- `candidate`
-- `timestamp`
-- `transaction_hash`
-- `status`
-- `validation_time_ms`
-- `block_index`
+## Lightweight Validator-Based Consensus
 
-### election_status
+The system implements:
 
-- `id`
-- `is_active`
+**“Lightweight Validator-Based Consensus for Secure Small-Scale Voting Systems.”**
+
+Consensus model:
+
+- 3 simulated validators: `node_a`, `node_b`, `node_c`
+- each validator independently verifies the candidate block
+- 2 approvals are required
+- accepted blocks are synchronized to all node ledger copies
+
+This avoids Proof of Work mining while still adding decentralized-style block acceptance for research demonstrations.
+
+## Research Metrics
+
+Dashboards display:
+
+- transaction validation time
+- signature verification time
+- block creation time
+- block verification time
+- consensus approval time
+- storage size
+- average bytes per vote
+- chain health status
+- tamper detection errors
+- simulated Proof-of-Work baseline time
+- validator consensus speedup estimate
+
+## Research Comparison
+
+| Feature | Traditional Blockchain Voting | This Prototype |
+|---|---|---|
+| Consensus | Proof of Work, Proof of Stake, or smart contract execution | 2-of-3 lightweight validator approval |
+| Computation | High for mining or contract execution | Low SHA-256, ECDSA verification, Merkle hashing |
+| Deployment | Often needs Ethereum-like stack | Local Flask + SQLite |
+| Storage | Can store heavy on-chain records | Minimal vote transaction data and voter hash |
+| Identity | Often wallet or contract based | Registered voter + ECDSA key pair |
+| Energy Use | High if mining is used | Very low |
+| Verification | Distributed but complex | Simple full-chain validation and node simulation |
+| Small Election Fit | Often overbuilt | Designed for academic small-scale deployments |
 
 ## API Documentation
 
@@ -227,7 +258,7 @@ The contribution is the combination of:
 
 ### `POST /api/logout`
 
-Logs out the current user.
+Clears the session.
 
 ### `POST /api/register-voter`
 
@@ -243,7 +274,7 @@ Admin session required.
 
 ### `POST /api/cast-vote`
 
-Voter session required.
+Voter session required. Creates, signs, validates, and submits a vote transaction.
 
 ```json
 {
@@ -253,58 +284,56 @@ Voter session required.
 
 ### `POST /api/validate-transaction`
 
-Voter session required. Validates a supplied transaction object against the authenticated voter.
+Voter session required. Validates a supplied transaction.
 
 ### `POST /api/create-block`
 
-Admin session required. Creates a block from pending validated transactions.
+Admin session required. Creates a block from pending transactions and runs validator consensus.
 
 ### `GET /api/blockchain`
 
-Returns all blocks.
+Returns the blockchain ledger.
 
 ### `GET /api/results`
 
 Returns vote totals calculated from the blockchain.
 
-## Research Metrics
+### `GET /api/chain/validate`
 
-The admin and results dashboards show:
+Returns full blockchain health status.
 
-- Average transaction validation time.
-- Average block creation time.
-- Average block verification time.
-- Number of confirmed transactions.
-- Chain storage size in bytes.
-- Average bytes per vote.
-- Duplicate vote prevention status.
+### `POST /api/tamper-demo`
 
-These metrics can be used in a research paper to compare the prototype against heavier smart-contract or Proof-of-Work-based voting systems.
+Admin session required. Intentionally modifies the latest non-genesis block for research demonstration.
 
 ## Testing Guide
 
-1. Start the Flask app.
+1. Run the app.
 2. Log in as `VOTER001`.
 3. Cast a vote.
-4. Open the blockchain explorer and confirm that a new block appears.
-5. Open results and verify that the vote total changed.
-6. Log out, log in again as `VOTER001`, and try to vote again.
-7. Confirm duplicate vote rejection.
-8. Log in as admin and add a voter or candidate.
-9. Stop the election and confirm voters cannot cast new votes.
+4. Open `/blockchain`.
+5. Confirm Merkle root, signatures, validator votes, and node status are visible.
+6. Open `/results`.
+7. Confirm the vote total is calculated from blockchain transactions.
+8. Log in as admin.
+9. Confirm `Blockchain Status: VALID`.
+10. Click `Simulate Tampering`.
+11. Confirm dashboard changes to `Blockchain Status: TAMPER DETECTED`.
+12. Try voting again with the same voter and confirm duplicate prevention.
 
-## Important Limitations
+## Future Scope
 
-This project is intentionally scoped as a research prototype. It does not implement national-scale election security, distributed authority management, hardware-backed identity, coercion resistance, anonymous credential protocols, or production-grade election auditing.
+The codebase is intentionally modular so future research extensions can be added:
 
-## Screenshots
+- AI-based fraud detection
+- biometric authentication
+- peer-to-peer networking
+- distributed deployment
+- zero-knowledge proofs
+- wallet-based identity
+- threshold signatures
+- privacy-preserving anonymous credentials
 
-Run the project and visit:
+## Limitations
 
-- `/login`
-- `/vote`
-- `/admin`
-- `/blockchain`
-- `/results`
-
-These pages provide the requested UI screens for project reports and screenshots.
+This remains an academic prototype. It does not provide production-grade election security, coercion resistance, anonymous credential issuance, independent election authority governance, hardware-backed key custody, or real distributed peer-to-peer networking.

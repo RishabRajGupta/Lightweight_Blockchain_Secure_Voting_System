@@ -1,7 +1,6 @@
 __pycache__/
 *.pyc
-venv/
-.env
+.venv/
 voting_system.db
 flask.log
 .DS_Store

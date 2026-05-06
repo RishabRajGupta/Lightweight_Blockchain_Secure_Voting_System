@@ -5,6 +5,7 @@
         <p class="eyebrow">Transparent blockchain count</p>
         <h1>Results Dashboard</h1>
     </div>
+    <span class="status-pill {{ 'on' if health.is_valid else 'off' }}">{{ health.status }}</span>
 </div>
 
 <div class="row g-4">
@@ -27,6 +28,9 @@
             <div class="metric-panel"><div class="metric-label">Blocks</div><div class="metric-value">{{ metrics.blocks }}</div></div>
             <div class="metric-panel"><div class="metric-label">Confirmed votes</div><div class="metric-value">{{ metrics.confirmed_votes }}</div></div>
             <div class="metric-panel"><div class="metric-label">Validation time</div><div class="metric-value">{{ metrics.avg_validation_time_ms }} ms</div></div>
+            <div class="metric-panel"><div class="metric-label">Signature check</div><div class="metric-value">{{ metrics.avg_signature_verification_time_ms }} ms</div></div>
+            <div class="metric-panel"><div class="metric-label">Consensus time</div><div class="metric-value">{{ metrics.avg_consensus_time_ms }} ms</div></div>
+            <div class="metric-panel"><div class="metric-label">PoW baseline</div><div class="metric-value">{{ metrics.pow_baseline_time_ms }} ms</div></div>
         </div>
     </div>
 </div>

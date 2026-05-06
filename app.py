@@ -9,7 +9,7 @@ from flask import Flask, flash, jsonify, redirect, render_template, request, ses
 
 from auth.login import authenticate_voter
 from blockchain.blockchain import LightweightVotingBlockchain
-from blockchain.transaction import create_vote_transaction
+from blockchain.transaction import create_vote_transaction, is_transaction_signature_valid
 from blockchain.validation import validate_vote_transaction
 from database.db import Database
 
@@ -93,7 +93,11 @@ def vote():
             return redirect(url_for("vote"))
 
         candidate = request.form["candidate"]
-        transaction = create_vote_transaction(voter["voter_id"], candidate)
+        transaction = create_vote_transaction(voter["voter_id"], candidate, voter["private_key"], voter["public_key"])
+
+        signature_start = time.perf_counter()
+        is_transaction_signature_valid(transaction)
+        signature_verification_time_ms = (time.perf_counter() - signature_start) * 1000
 
         start = time.perf_counter()
         is_valid, message = validate_vote_transaction(db, voter["voter_id"], transaction)
@@ -103,8 +107,7 @@ def vote():
             flash(message, "danger")
             return redirect(url_for("vote"))
 
-        voting_chain.add_pending_transaction(transaction)
-        db.update_transaction_validation_time(transaction["transaction_id"], validation_time_ms)
+        voting_chain.add_pending_transaction(transaction, validation_time_ms, signature_verification_time_ms)
         db.mark_voter_voted(voter["voter_id"])
 
         created, block_message, _ = voting_chain.create_block_from_pending()
@@ -124,12 +127,15 @@ def vote():
 def admin_dashboard():
     metrics = db.performance_metrics()
     metrics.update(voting_chain.storage_metrics())
+    metrics.update(voting_chain.consensus_comparison_metrics())
+    health = voting_chain.chain_health()
     return render_template(
         "admin.html",
         voters=db.get_voters(),
         candidates=db.get_candidates(),
         election_active=db.is_election_active(),
         metrics=metrics,
+        health=health,
         pending_count=len(voting_chain.pending_transactions),
     )
 
@@ -166,7 +172,7 @@ def election_action(action):
 
 @app.route("/blockchain")
 def blockchain_explorer():
-    return render_template("blockchain.html", blocks=voting_chain.get_chain())
+    return render_template("blockchain.html", blocks=voting_chain.get_chain(), health=voting_chain.chain_health())
 
 
 @app.route("/results")
@@ -176,7 +182,18 @@ def results():
     vote_totals.update(voting_chain.calculate_results())
     metrics = db.performance_metrics()
     metrics.update(voting_chain.storage_metrics())
-    return render_template("results.html", results=vote_totals, metrics=metrics)
+    metrics.update(voting_chain.consensus_comparison_metrics())
+    return render_template("results.html", results=vote_totals, metrics=metrics, health=voting_chain.chain_health())
+
+
+@app.route("/admin/simulate-tamper", methods=["POST"])
+@admin_required
+def simulate_tamper():
+    if db.tamper_latest_block():
+        flash("Latest block transaction was intentionally modified for tamper-detection demonstration.", "warning")
+    else:
+        flash("No non-genesis block is available to tamper with yet.", "info")
+    return redirect(url_for("admin_dashboard"))
 
 
 @app.route("/api/login", methods=["POST"])
@@ -212,11 +229,17 @@ def api_register_voter():
 @voter_required
 def api_cast_vote():
     data = request.get_json(force=True)
-    transaction = create_vote_transaction(session["voter_id"], data["candidate"])
+    voter = db.get_voter(session["voter_id"])
+    transaction = create_vote_transaction(voter["voter_id"], data["candidate"], voter["private_key"], voter["public_key"])
+    signature_start = time.perf_counter()
+    is_transaction_signature_valid(transaction)
+    signature_verification_time_ms = (time.perf_counter() - signature_start) * 1000
+    validation_start = time.perf_counter()
     is_valid, message = validate_vote_transaction(db, session["voter_id"], transaction)
+    validation_time_ms = (time.perf_counter() - validation_start) * 1000
     if not is_valid:
         return jsonify({"success": False, "message": message}), 400
-    voting_chain.add_pending_transaction(transaction)
+    voting_chain.add_pending_transaction(transaction, validation_time_ms, signature_verification_time_ms)
     db.mark_voter_voted(session["voter_id"])
     created, block_message, block = voting_chain.create_block_from_pending()
     return jsonify({"success": created, "message": block_message, "transaction": transaction, "block": block})
@@ -245,6 +268,18 @@ def api_blockchain():
 @app.route("/api/results")
 def api_results():
     return jsonify(voting_chain.calculate_results())
+
+
+@app.route("/api/chain/validate")
+def api_validate_chain():
+    return jsonify(voting_chain.chain_health())
+
+
+@app.route("/api/tamper-demo", methods=["POST"])
+@admin_required
+def api_tamper_demo():
+    tampered = db.tamper_latest_block()
+    return jsonify({"tampered": tampered, "health": voting_chain.chain_health()})
 
 
 if __name__ == "__main__":

@@ -27,7 +27,9 @@ body {
 .auth-panel,
 .tool-panel,
 .metric-panel,
-.block-panel {
+.block-panel,
+.health-panel,
+.node-card {
     background: var(--panel);
     border: 1px solid var(--line);
     border-radius: 8px;
@@ -96,7 +98,7 @@ body {
 
 .metrics-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
     gap: 16px;
 }
 
@@ -140,6 +142,26 @@ body {
     margin-bottom: 18px;
 }
 
+.health-panel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    margin: 18px 0 24px;
+    padding: 22px;
+    border-left: 5px solid var(--green);
+}
+
+.health-panel.tampered {
+    border-left-color: var(--red);
+    background: #fff8f7;
+}
+
+.health-panel h2 {
+    font-size: 1.28rem;
+    margin-bottom: 6px;
+}
+
 .block-head {
     display: flex;
     justify-content: space-between;
@@ -158,6 +180,39 @@ body {
     gap: 12px;
     padding: 8px 0;
     border-top: 1px solid var(--line);
+}
+
+.validator-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.validator-badge {
+    background: #eef4ff;
+    border: 1px solid #cadbff;
+    border-radius: 999px;
+    color: #244c9f;
+    font-size: .82rem;
+    font-weight: 700;
+    padding: 6px 10px;
+}
+
+.node-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+}
+
+.node-card {
+    padding: 12px;
+}
+
+.node-card span,
+.node-card small {
+    color: var(--muted);
+    display: block;
 }
 
 code {
@@ -187,7 +242,8 @@ code {
 
 @media (max-width: 620px) {
     .page-heading,
-    .block-head {
+    .block-head,
+    .health-panel {
         align-items: flex-start;
         flex-direction: column;
     }

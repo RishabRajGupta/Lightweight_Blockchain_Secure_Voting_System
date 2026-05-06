@@ -5,6 +5,7 @@
         <p class="eyebrow">Immutable audit trail</p>
         <h1>Blockchain Explorer</h1>
     </div>
+    <span class="status-pill {{ 'on' if health.is_valid else 'off' }}">{{ health.status }}</span>
 </div>
 
 {% for block in blocks %}
@@ -13,24 +14,40 @@
         <div><strong>Block #{{ block.index }}</strong><span>{{ block.timestamp }}</span></div>
         <span>{{ block.transactions|length }} transaction(s)</span>
     </div>
+    <div class="hash-row"><span>Merkle</span><code>{{ block.merkle_root }}</code></div>
     <div class="hash-row"><span>Previous</span><code>{{ block.previous_hash }}</code></div>
     <div class="hash-row"><span>Current</span><code>{{ block.current_hash }}</code></div>
+    <div class="validator-strip">
+        {% for node, vote in block.validator_votes.items() %}
+            <span class="validator-badge">{{ node }}: {{ vote }}</span>
+        {% endfor %}
+    </div>
     <div class="table-responsive mt-3">
         <table class="table table-sm">
-            <thead><tr><th>Transaction ID</th><th>Voter Hash</th><th>Candidate</th><th>Hash</th></tr></thead>
+            <thead><tr><th>Transaction ID</th><th>Voter Hash</th><th>Candidate</th><th>Signature</th><th>Hash</th></tr></thead>
             <tbody>
             {% for tx in block.transactions %}
                 <tr>
                     <td><code>{{ tx.transaction_id }}</code></td>
                     <td><code>{{ tx.voter_hash[:18] }}...</code></td>
                     <td>{{ tx.candidate }}</td>
+                    <td><code>{{ (tx.signature|default('missing'))[:18] }}...</code></td>
                     <td><code>{{ tx.transaction_hash[:18] }}...</code></td>
                 </tr>
             {% else %}
-                <tr><td colspan="4" class="text-secondary">Genesis block</td></tr>
+                <tr><td colspan="5" class="text-secondary">Genesis block</td></tr>
             {% endfor %}
             </tbody>
         </table>
+    </div>
+    <div class="node-grid mt-3">
+        {% for node, status in block.node_status.items() %}
+            <div class="node-card">
+                <strong>{{ node }}</strong>
+                <span>{{ "valid" if status.valid else "invalid" }}</span>
+                <small>{{ status.message }}</small>
+            </div>
+        {% endfor %}
     </div>
 </section>
 {% endfor %}

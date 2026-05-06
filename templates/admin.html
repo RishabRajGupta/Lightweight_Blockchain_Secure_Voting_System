@@ -12,10 +12,31 @@
 
 <div class="metrics-grid">
     <div class="metric-panel"><div class="metric-label">Avg validation</div><div class="metric-value">{{ metrics.avg_validation_time_ms }} ms</div></div>
+    <div class="metric-panel"><div class="metric-label">Avg signature check</div><div class="metric-value">{{ metrics.avg_signature_verification_time_ms }} ms</div></div>
     <div class="metric-panel"><div class="metric-label">Avg block creation</div><div class="metric-value">{{ metrics.avg_block_creation_time_ms }} ms</div></div>
     <div class="metric-panel"><div class="metric-label">Avg verification</div><div class="metric-value">{{ metrics.avg_block_verification_time_ms }} ms</div></div>
+    <div class="metric-panel"><div class="metric-label">Avg consensus</div><div class="metric-value">{{ metrics.avg_consensus_time_ms }} ms</div></div>
     <div class="metric-panel"><div class="metric-label">Storage</div><div class="metric-value">{{ metrics.chain_storage_bytes }} bytes</div></div>
 </div>
+
+<section class="health-panel {{ 'valid' if health.is_valid else 'tampered' }}">
+    <div>
+        <p class="eyebrow">Blockchain health monitor</p>
+        <h2>Blockchain Status: {{ health.status }}</h2>
+        {% if health.errors %}
+            <ul class="mb-0">
+                {% for error in health.errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="mb-0">All blocks, hashes, signatures, Merkle roots, and ordering checks are valid.</p>
+        {% endif %}
+    </div>
+    <form method="post" action="{{ url_for('simulate_tamper') }}">
+        <button class="btn btn-outline-danger">Simulate Tampering</button>
+    </form>
+</section>
 
 <div class="row g-4 mt-1">
     <div class="col-lg-6">
@@ -29,10 +50,15 @@
             </form>
             <div class="table-responsive mt-3">
                 <table class="table align-middle">
-                    <thead><tr><th>Voter ID</th><th>Name</th><th>Status</th></tr></thead>
+                    <thead><tr><th>Voter ID</th><th>Name</th><th>Public Key</th><th>Status</th></tr></thead>
                     <tbody>
                     {% for voter in voters %}
-                        <tr><td>{{ voter.voter_id }}</td><td>{{ voter.name }}</td><td>{{ "Voted" if voter.has_voted else "Not voted" }}</td></tr>
+                        <tr>
+                            <td>{{ voter.voter_id }}</td>
+                            <td>{{ voter.name }}</td>
+                            <td><code>{{ voter.public_key[:28] }}...</code></td>
+                            <td>{{ "Voted" if voter.has_voted else "Not voted" }}</td>
+                        </tr>
                     {% endfor %}
                     </tbody>
                 </table>
@@ -56,7 +82,21 @@
             <h2>Research Metrics</h2>
             <p class="mb-1">Confirmed transactions: {{ metrics.confirmed_transactions }}</p>
             <p class="mb-1">Average bytes per vote: {{ metrics.avg_bytes_per_vote }}</p>
+            <p class="mb-1">PoW baseline time: {{ metrics.pow_baseline_time_ms }} ms</p>
+            <p class="mb-1">Validator speedup estimate: {{ metrics.validator_speedup }}x</p>
             <p class="mb-0">Duplicate prevention: {{ metrics.duplicate_vote_prevention_accuracy }}</p>
+        </section>
+        <section class="tool-panel mt-4">
+            <h2>Simulated Node Ledgers</h2>
+            <div class="node-grid">
+                {% for node, status in health.nodes.items() %}
+                    <div class="node-card">
+                        <strong>{{ node }}</strong>
+                        <span>{{ status.blocks }} block(s)</span>
+                        <small>{{ "Valid" if status.all_valid else "Needs review" }}</small>
+                    </div>
+                {% endfor %}
+            </div>
         </section>
     </div>
 </div>
