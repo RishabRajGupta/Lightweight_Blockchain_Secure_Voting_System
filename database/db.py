@@ -87,7 +87,7 @@ class Database:
                     is_active INTEGER NOT NULL DEFAULT 0
                 );
 
-                INSERT OR IGNORE INTO election_status (id, is_active) VALUES (1, 1);
+                INSERT OR IGNORE INTO election_status (id, is_active) VALUES (1, 0);
                 """
             )
             self._migrate_schema(conn)
@@ -168,6 +168,18 @@ class Database:
     def mark_voter_voted(self, voter_id: str) -> None:
         with self.connect() as conn:
             conn.execute("UPDATE voters SET has_voted = 1 WHERE voter_id = ?", (voter_id,))
+
+    def all_voters_have_voted(self) -> bool:
+        with self.connect() as conn:
+            row = conn.execute(
+                """
+                SELECT
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN has_voted = 1 THEN 1 ELSE 0 END) AS voted
+                FROM voters
+                """
+            ).fetchone()
+            return bool(row["total"] and row["total"] == (row["voted"] or 0))
 
     def get_voters(self) -> list[dict]:
         with self.connect() as conn:
@@ -299,6 +311,11 @@ class Database:
             rows = conn.execute("SELECT * FROM blockchain ORDER BY block_index").fetchall()
             return [self._row_to_block(row) for row in rows]
 
+    def get_all_transactions(self) -> list[dict]:
+        with self.connect() as conn:
+            rows = conn.execute("SELECT * FROM transactions ORDER BY timestamp").fetchall()
+            return [dict(row) for row in rows]
+
     def performance_metrics(self) -> dict:
         with self.connect() as conn:
             tx = conn.execute(
@@ -385,3 +402,17 @@ class Database:
                 (json.dumps(transactions, sort_keys=True), row["block_index"]),
             )
             return True
+
+    def clear_election_runtime(self, is_active: bool = False) -> None:
+        """Reset vote state, blockchain ledger, node ledgers, and metrics.
+
+        Voters and candidates are preserved so the admin can start a new clean
+        election round without re-entering registration data.
+        """
+
+        with self.connect() as conn:
+            conn.execute("DELETE FROM transactions")
+            conn.execute("DELETE FROM node_ledgers")
+            conn.execute("DELETE FROM blockchain")
+            conn.execute("UPDATE voters SET has_voted = 0")
+            conn.execute("UPDATE election_status SET is_active = ? WHERE id = 1", (1 if is_active else 0,))

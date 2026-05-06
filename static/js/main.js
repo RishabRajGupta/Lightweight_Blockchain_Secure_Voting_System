@@ -60,7 +60,49 @@ document.querySelectorAll("[data-sidebar-collapse]").forEach((button) => {
 document.querySelectorAll(".candidate-card").forEach((card) => {
     card.addEventListener("click", () => {
         const input = card.querySelector("input");
-        if (input) input.checked = true;
+        if (input) {
+            input.checked = true;
+            document.querySelectorAll("[data-selected-candidate]").forEach((target) => {
+                target.textContent = input.value;
+            });
+        }
+    });
+});
+
+document.querySelectorAll("[data-review-vote]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+        const form = document.getElementById("voteForm");
+        const selected = form?.querySelector('input[name="candidate"]:checked');
+        if (!selected) {
+            event.preventDefault();
+            event.stopPropagation();
+            form?.reportValidity();
+            return;
+        }
+        document.querySelectorAll("[data-selected-candidate]").forEach((target) => {
+            target.textContent = selected.value;
+        });
+        const panel = document.querySelector("[data-vote-confirm-panel]");
+        if (panel) {
+            panel.hidden = false;
+            panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+    });
+});
+
+document.querySelectorAll("[data-cancel-vote-confirm]").forEach((button) => {
+    button.addEventListener("click", () => {
+        const panel = document.querySelector("[data-vote-confirm-panel]");
+        if (panel) panel.hidden = true;
+    });
+});
+
+document.querySelectorAll("#voteForm").forEach((form) => {
+    form.addEventListener("submit", () => {
+        const button = form.querySelector("[data-final-vote-submit]");
+        if (button) {
+            button.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Submitting vote...';
+        }
     });
 });
 

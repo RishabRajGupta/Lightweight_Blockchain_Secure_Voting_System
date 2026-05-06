@@ -1,21 +1,25 @@
 from __future__ import annotations
 
+import json
 import os
 import sqlite3
 import time
 from functools import wraps
 
-from flask import Flask, flash, jsonify, redirect, render_template, request, session, url_for
+from flask import Flask, Response, flash, jsonify, redirect, render_template, request, session, url_for
 
 from auth.login import authenticate_voter
 from blockchain.blockchain import LightweightVotingBlockchain
 from blockchain.transaction import create_vote_transaction, is_transaction_signature_valid
 from blockchain.validation import validate_vote_transaction
-from database.db import Database
+from database.db import DB_PATH, Database
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "research-prototype-change-me")
 app.config.update(SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE="Lax")
+
+if os.environ.get("RESET_DEMO_ON_START", "1") == "1" and DB_PATH.exists():
+    DB_PATH.unlink()
 
 db = Database()
 voting_chain = LightweightVotingBlockchain(db)
@@ -127,7 +131,11 @@ def vote():
         db.mark_voter_voted(voter["voter_id"])
 
         created, block_message, _ = voting_chain.create_block_from_pending()
-        flash(f"{message} {block_message if created else ''}", "success")
+        if db.all_voters_have_voted():
+            db.set_election_status(False)
+            flash("All registered voters have voted. Election stopped automatically and final results are ready.", "success")
+        else:
+            flash(f"{message} {block_message if created else ''}", "success")
         return redirect(url_for("results"))
 
     return render_template(
@@ -181,14 +189,42 @@ def add_candidate():
 @app.route("/admin/election/<action>", methods=["POST"])
 @admin_required
 def election_action(action):
-    db.set_election_status(action == "start")
-    flash(f"Election {'started' if action == 'start' else 'stopped'}.", "info")
+    if action == "start":
+        voting_chain.reset_runtime_ledger(is_active=True)
+        flash("Election started with a fresh ledger, cleared vote statuses, and reset research metrics.", "success")
+    else:
+        db.set_election_status(False)
+        flash("Election stopped. Results remain available from the current verified ledger.", "info")
     return redirect(url_for("admin_dashboard"))
 
 
 @app.route("/blockchain")
 def blockchain_explorer():
     return render_template("blockchain.html", blocks=voting_chain.get_chain(), health=voting_chain.chain_health())
+
+
+@app.route("/blockchain/download")
+def download_blockchain():
+    export = {
+        "project": "Lightweight Blockchain-Based Secure Voting System",
+        "exported_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "election_active": db.is_election_active(),
+        "chain_health": voting_chain.chain_health(),
+        "metrics": {**db.performance_metrics(), **voting_chain.storage_metrics(), **voting_chain.consensus_comparison_metrics()},
+        "candidates": db.get_candidates(),
+        "voters": [
+            {"voter_id": voter["voter_id"], "name": voter["name"], "has_voted": voter["has_voted"]}
+            for voter in db.get_voters()
+        ],
+        "transactions": db.get_all_transactions(),
+        "blockchain": voting_chain.get_chain(),
+    }
+    payload = json.dumps(export, indent=2, sort_keys=True)
+    return Response(
+        payload,
+        mimetype="application/json",
+        headers={"Content-Disposition": "attachment; filename=securevote_chain_export.json"},
+    )
 
 
 @app.route("/results")
@@ -271,6 +307,8 @@ def api_cast_vote():
     voting_chain.add_pending_transaction(transaction, validation_time_ms, signature_verification_time_ms)
     db.mark_voter_voted(session["voter_id"])
     created, block_message, block = voting_chain.create_block_from_pending()
+    if db.all_voters_have_voted():
+        db.set_election_status(False)
     return jsonify({"success": created, "message": block_message, "transaction": transaction, "block": block})
 
 

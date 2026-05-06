@@ -41,8 +41,13 @@
     <section class="surface-panel">
         <div class="section-head">
             <div><p class="eyebrow">Voter registry</p><h3>Manage voter identities</h3></div>
-            <button class="btn-premium" data-bs-toggle="modal" data-bs-target="#voterModal"><i data-lucide="user-plus"></i> Add voter</button>
         </div>
+        <form method="post" action="{{ url_for('register_voter') }}" class="inline-admin-form">
+            <div class="input-shell"><i data-lucide="badge"></i><input name="voter_id" placeholder="Voter ID" required></div>
+            <div class="input-shell"><i data-lucide="user"></i><input name="name" placeholder="Voter name" required></div>
+            <div class="input-shell"><i data-lucide="key-round"></i><input name="password" placeholder="Password" required></div>
+            <button class="btn-premium" type="submit"><i data-lucide="user-plus"></i> Add voter</button>
+        </form>
         <div class="table-tools">
             <div class="input-shell compact"><i data-lucide="search"></i><input data-table-search="#votersTable" placeholder="Search voters"></div>
         </div>
@@ -66,8 +71,11 @@
     <section class="surface-panel">
         <div class="section-head">
             <div><p class="eyebrow">Candidate slate</p><h3>Election candidates</h3></div>
-            <button class="btn-premium" data-bs-toggle="modal" data-bs-target="#candidateModal"><i data-lucide="badge-plus"></i> Add candidate</button>
         </div>
+        <form method="post" action="{{ url_for('add_candidate') }}" class="inline-admin-form candidate-form">
+            <div class="input-shell"><i data-lucide="badge-plus"></i><input name="name" placeholder="Candidate name" required></div>
+            <button class="btn-premium" type="submit"><i data-lucide="plus"></i> Add candidate</button>
+        </form>
         <div class="candidate-admin-list">
             {% for candidate in candidates %}
                 <div class="ranking-card">
@@ -103,33 +111,5 @@
         </div>
         <canvas id="benchmarkChart" class="chart-canvas compact-chart" data-validator="{{ metrics.avg_consensus_time_ms }}" data-pow="{{ metrics.pow_baseline_time_ms }}"></canvas>
     </section>
-</div>
-
-<div class="modal fade" id="voterModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content modal-glass">
-            <form method="post" action="{{ url_for('register_voter') }}">
-                <div class="modal-header"><h5 class="modal-title">Register voter</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
-                <div class="modal-body form-grid">
-                    <input name="voter_id" class="form-control" placeholder="Voter ID" required>
-                    <input name="name" class="form-control" placeholder="Name" required>
-                    <input name="password" class="form-control" placeholder="Password" required>
-                </div>
-                <div class="modal-footer"><button class="btn-premium"><i data-lucide="user-plus"></i> Register</button></div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="candidateModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content modal-glass">
-            <form method="post" action="{{ url_for('add_candidate') }}">
-                <div class="modal-header"><h5 class="modal-title">Add candidate</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
-                <div class="modal-body"><input name="name" class="form-control" placeholder="Candidate name" required></div>
-                <div class="modal-footer"><button class="btn-premium"><i data-lucide="badge-plus"></i> Add candidate</button></div>
-            </form>
-        </div>
-    </div>
 </div>
 {% endblock %}

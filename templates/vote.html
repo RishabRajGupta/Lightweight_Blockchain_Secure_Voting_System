@@ -44,9 +44,26 @@
                         </label>
                     {% endfor %}
                 </div>
-                <button class="btn-premium mt-4" type="button" data-bs-toggle="modal" data-bs-target="#confirmVoteModal" {% if not election_active %}disabled{% endif %}>
+                <button class="btn-premium mt-4" type="button" data-review-vote {% if not election_active %}disabled{% endif %}>
                     <i data-lucide="shield-check"></i> Review Secure Transaction
                 </button>
+                <div class="inline-confirm-panel" data-vote-confirm-panel hidden>
+                    <div>
+                        <p class="eyebrow">Confirm signed vote</p>
+                        <h3>Ready to submit <span data-selected-candidate>selected candidate</span></h3>
+                        <p>This creates a signed vote transaction, requests validator consensus, and writes the confirmed block to the ledger.</p>
+                    </div>
+                    <div class="tx-preview-box">
+                        <span>candidate</span><code data-selected-candidate>Choose a candidate first</code>
+                        <span>voter_hash</span><code>sha256({{ voter.voter_id }})</code>
+                        <span>signature</span><code>ECDSA over transaction hash</code>
+                        <span>consensus</span><code>2 of 3 validator approval</code>
+                    </div>
+                    <div class="confirm-actions">
+                        <button type="button" class="btn-ghost" data-cancel-vote-confirm>Cancel</button>
+                        <button type="submit" class="btn-premium" data-final-vote-submit><i data-lucide="send"></i> Cast Vote</button>
+                    </div>
+                </div>
             </form>
         {% endif %}
     </section>
@@ -61,32 +78,12 @@
             <div><i data-lucide="blocks"></i><span>Generate Merkle block proof</span></div>
             <div><i data-lucide="server"></i><span>Confirm through 2-of-3 validators</span></div>
         </div>
-        <div class="confirmation-animation" aria-hidden="true">
-            <span></span><span></span><span></span>
+        <div class="node-sync-strip" aria-label="Validator synchronization status">
+            <span><i data-lucide="server"></i> Node A</span>
+            <span><i data-lucide="server"></i> Node B</span>
+            <span><i data-lucide="server"></i> Node C</span>
         </div>
     </aside>
 </div>
 
-<div class="modal fade" id="confirmVoteModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content modal-glass">
-            <div class="modal-header">
-                <h5 class="modal-title"><i data-lucide="shield-question"></i> Confirm signed vote</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p>This will create a signed vote transaction and request validator consensus. The action cannot be changed after confirmation.</p>
-                <div class="tx-preview-box">
-                    <span>voter_hash</span><code>sha256({{ voter.voter_id }})</code>
-                    <span>signature</span><code>ECDSA over transaction hash</code>
-                    <span>consensus</span><code>2 of 3 validator approval</code>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn-ghost" data-bs-dismiss="modal">Cancel</button>
-                <button type="submit" form="voteForm" class="btn-premium"><i data-lucide="send"></i> Cast Vote</button>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}
