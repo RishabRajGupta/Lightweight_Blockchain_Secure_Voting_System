@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block page_title %}Research Metrics{% endblock %}
+{% block content %}
+<div class="hero-panel metrics-hero">
+    <div>
+        <p class="eyebrow">Performance analysis</p>
+        <h2>Lightweight blockchain research metrics</h2>
+        <p>Benchmark validation, signatures, block verification, consensus, storage efficiency, and tamper-detection status for presentation-ready evaluation.</p>
+    </div>
+    <span class="status-orb {{ 'valid' if health.is_valid else 'danger' }}"><i data-lucide="activity"></i>{{ health.status }}</span>
+</div>
+
+<div class="metrics-grid">
+    <div class="metric-panel animated-stat"><span>Transaction validation</span><strong>{{ metrics.avg_validation_time_ms }} ms</strong><small>Format, duplicate, hash, identity checks</small></div>
+    <div class="metric-panel animated-stat"><span>Signature verification</span><strong>{{ metrics.avg_signature_verification_time_ms }} ms</strong><small>ECDSA public-key validation</small></div>
+    <div class="metric-panel animated-stat"><span>Block creation</span><strong>{{ metrics.avg_block_creation_time_ms }} ms</strong><small>Merkle root and block hash</small></div>
+    <div class="metric-panel animated-stat"><span>Block verification</span><strong>{{ metrics.avg_block_verification_time_ms }} ms</strong><small>Hash, Merkle, signature checks</small></div>
+    <div class="metric-panel animated-stat"><span>Consensus approval</span><strong>{{ metrics.avg_consensus_time_ms }} ms</strong><small>3 validator simulation</small></div>
+    <div class="metric-panel animated-stat"><span>Storage efficiency</span><strong>{{ metrics.avg_bytes_per_vote }}</strong><small>Average bytes per confirmed vote</small></div>
+</div>
+
+<div class="grid-2 mt-4">
+    <section class="surface-panel">
+        <div class="section-head">
+            <div><p class="eyebrow">Benchmark chart</p><h3>Validator consensus vs PoW baseline</h3></div>
+            <span class="verification-badge"><i data-lucide="zap"></i>{{ metrics.validator_speedup }}x estimate</span>
+        </div>
+        <canvas id="benchmarkChart" class="chart-canvas" data-validator="{{ metrics.avg_consensus_time_ms }}" data-pow="{{ metrics.pow_baseline_time_ms }}"></canvas>
+    </section>
+    <section class="surface-panel">
+        <div class="section-head">
+            <div><p class="eyebrow">Pipeline latency</p><h3>Validation stages</h3></div>
+        </div>
+        <canvas id="latencyChart" class="chart-canvas" data-validation="{{ metrics.avg_validation_time_ms }}" data-signature="{{ metrics.avg_signature_verification_time_ms }}" data-creation="{{ metrics.avg_block_creation_time_ms }}" data-verification="{{ metrics.avg_block_verification_time_ms }}" data-consensus="{{ metrics.avg_consensus_time_ms }}"></canvas>
+    </section>
+</div>
+
+<section class="surface-panel mt-4">
+    <div class="section-head">
+        <div><p class="eyebrow">Research comparison</p><h3>Why the lightweight architecture matters</h3></div>
+    </div>
+    <div class="comparison-grid">
+        <div><span>Computation</span><strong>SHA-256 + ECDSA</strong><small>Avoids mining loops and smart-contract execution.</small></div>
+        <div><span>Consensus</span><strong>2-of-3 validators</strong><small>Deterministic small-scale approval for research demos.</small></div>
+        <div><span>Deployment</span><strong>Flask + SQLite</strong><small>Local private blockchain, no external chain required.</small></div>
+        <div><span>Tamper response</span><strong>Full-chain validation</strong><small>Detects modified transactions, broken hashes, invalid signatures.</small></div>
+    </div>
+</section>
+{% endblock %}

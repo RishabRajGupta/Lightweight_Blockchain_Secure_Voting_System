@@ -1,19 +1,34 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="auth-shell">
-    <section class="auth-panel">
+<section class="auth-card">
+    <div class="auth-visual">
+        <div class="chain-radar">
+            <i data-lucide="fingerprint"></i>
+        </div>
+        <span class="security-tag"><i data-lucide="key-round"></i> ECDSA signed ballots</span>
+        <span class="security-tag secondary"><i data-lucide="blocks"></i> Validator consensus</span>
+    </div>
+    <div class="auth-copy">
         <p class="eyebrow">Research prototype</p>
-        <h1>Lightweight Blockchain Secure Voting</h1>
-        <p class="text-secondary">Private blockchain voting with efficient transaction validation and simplified block verification.</p>
-        <form method="post" class="mt-4">
-            <label class="form-label">Voter ID</label>
-            <input name="voter_id" class="form-control" placeholder="VOTER001" required>
-            <label class="form-label mt-3">Password</label>
-            <input type="password" name="password" class="form-control" placeholder="password123" required>
-            <button class="btn btn-primary w-100 mt-4">Login as Voter</button>
-        </form>
-        <div class="small text-secondary mt-3">Sample voters: VOTER001, VOTER002, VOTER003. Password: password123.</div>
-        <a class="btn btn-link px-0 mt-2" href="{{ url_for('admin_login') }}">Admin login</a>
-    </section>
-</div>
+        <h1>SecureVote Chain</h1>
+        <p>Lightweight blockchain voting with signed transactions, Merkle verification, and tamper-aware audit trails.</p>
+    </div>
+    <form method="post" class="auth-form" data-validate-form>
+        <label class="field-label" for="voter_id">Voter ID</label>
+        <div class="input-shell">
+            <i data-lucide="badge-check"></i>
+            <input id="voter_id" name="voter_id" placeholder="VOTER001" required>
+        </div>
+        <label class="field-label" for="password">Password</label>
+        <div class="input-shell">
+            <i data-lucide="lock-keyhole"></i>
+            <input id="password" type="password" name="password" placeholder="password123" required>
+        </div>
+        <button class="btn-premium w-100" type="submit"><i data-lucide="log-in"></i> Authenticate Voter</button>
+    </form>
+    <div class="auth-footer">
+        <span>Sample: VOTER001 / password123</span>
+        <a href="{{ url_for('admin_login') }}">Admin portal</a>
+    </div>
+</section>
 {% endblock %}

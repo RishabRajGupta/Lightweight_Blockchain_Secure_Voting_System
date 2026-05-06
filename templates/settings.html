@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block page_title %}Settings{% endblock %}
+{% block content %}
+<div class="hero-panel">
+    <div>
+        <p class="eyebrow">Interface settings</p>
+        <h2>Research demo preferences</h2>
+        <p>Theme controls and implementation notes for future frontend extensions.</p>
+    </div>
+    <button class="btn-premium" type="button" data-theme-toggle><i data-lucide="sun-moon"></i> Toggle Theme</button>
+</div>
+
+<section class="surface-panel">
+    <div class="section-head">
+        <div><p class="eyebrow">Future-ready UI</p><h3>Extension points</h3></div>
+    </div>
+    <div class="comparison-grid">
+        <div><span>Fraud analytics</span><strong>AI-ready metrics cards</strong><small>Designed to accept model output without changing the shell.</small></div>
+        <div><span>Identity</span><strong>Biometric-ready panels</strong><small>Authentication surfaces can add new proof factors.</small></div>
+        <div><span>Network</span><strong>Node visualization</strong><small>Simulated nodes can be replaced with peer status data.</small></div>
+        <div><span>Privacy</span><strong>ZK proof-ready explorer</strong><small>Transaction modals can expose proof metadata later.</small></div>
+    </div>
+</section>
+{% endblock %}

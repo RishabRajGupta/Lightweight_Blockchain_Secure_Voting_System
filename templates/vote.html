@@ -1,41 +1,91 @@
 {% extends "base.html" %}
+{% block page_title %}Secure Ballot{% endblock %}
 {% block content %}
-<div class="page-heading">
+<div class="hero-panel vote-hero">
     <div>
         <p class="eyebrow">Authenticated voter</p>
-        <h1>Cast Vote</h1>
+        <h2>Cast a cryptographically signed vote</h2>
+        <p>Your ballot is converted into a signed blockchain transaction, validated, packed into a Merkle block, and confirmed by lightweight validator consensus.</p>
     </div>
-    <span class="status-pill {{ 'on' if election_active else 'off' }}">{{ "Election Active" if election_active else "Election Stopped" }}</span>
+    <div class="hero-status">
+        <span class="status-chip {{ 'ok' if election_active else 'danger' }}"><i data-lucide="radio-tower"></i>{{ "Election Active" if election_active else "Election Stopped" }}</span>
+        <span class="status-chip"><i data-lucide="hash"></i> SHA-256 voter privacy</span>
+    </div>
 </div>
 
-<div class="row g-4">
-    <div class="col-lg-8">
-        <div class="tool-panel">
-            {% if voter.has_voted %}
-                <div class="empty-state">
-                    <h2>Your vote has already been recorded.</h2>
-                    <p>The duplicate-vote validator will reject any further vote from this voter ID.</p>
-                </div>
-            {% else %}
-                <form method="post">
-                    <div class="candidate-grid">
-                        {% for candidate in candidates %}
-                            <label class="candidate-card">
-                                <input type="radio" name="candidate" value="{{ candidate.name }}" required>
-                                <span>{{ candidate.name }}</span>
-                            </label>
-                        {% endfor %}
-                    </div>
-                    <button class="btn btn-primary mt-4" {% if not election_active %}disabled{% endif %}>Validate Transaction and Add Block</button>
-                </form>
-            {% endif %}
+<div class="grid-2 vote-layout">
+    <section class="surface-panel">
+        <div class="section-head">
+            <div>
+                <p class="eyebrow">Ballot selection</p>
+                <h3>Choose one candidate</h3>
+            </div>
+            <span class="progress-ring" aria-label="Step 1 of 3">1/3</span>
         </div>
-    </div>
-    <div class="col-lg-4">
-        <div class="metric-panel">
-            <div class="metric-label">Voter identity stored on-chain</div>
-            <div class="metric-value">SHA-256 hash</div>
-            <p class="small text-secondary mb-0">Plain voter details remain outside blockchain transactions.</p>
+        {% if voter.has_voted %}
+            <div class="empty-state success-state">
+                <i data-lucide="badge-check"></i>
+                <h3>Vote already confirmed</h3>
+                <p>The duplicate-vote validator will reject any further ballot from this voter ID.</p>
+                <a class="btn-ghost" href="{{ url_for('blockchain_explorer') }}"><i data-lucide="blocks"></i> View blockchain proof</a>
+            </div>
+        {% else %}
+            <form method="post" id="voteForm">
+                <div class="candidate-grid">
+                    {% for candidate in candidates %}
+                        <label class="candidate-card">
+                            <input type="radio" name="candidate" value="{{ candidate.name }}" required>
+                            <span class="candidate-avatar">{{ candidate.name[:1] }}</span>
+                            <span class="candidate-meta">
+                                <strong>{{ candidate.name }}</strong>
+                                <small>Eligible candidate</small>
+                            </span>
+                            <i data-lucide="circle-check"></i>
+                        </label>
+                    {% endfor %}
+                </div>
+                <button class="btn-premium mt-4" type="button" data-bs-toggle="modal" data-bs-target="#confirmVoteModal" {% if not election_active %}disabled{% endif %}>
+                    <i data-lucide="shield-check"></i> Review Secure Transaction
+                </button>
+            </form>
+        {% endif %}
+    </section>
+
+    <aside class="surface-panel transaction-preview">
+        <p class="eyebrow">Transaction preview</p>
+        <h3>Validation pipeline</h3>
+        <div class="flow-list">
+            <div><i data-lucide="user-check"></i><span>Authenticate voter identity</span></div>
+            <div><i data-lucide="key-round"></i><span>Sign transaction using ECDSA</span></div>
+            <div><i data-lucide="fingerprint"></i><span>Hash voter ID for privacy</span></div>
+            <div><i data-lucide="blocks"></i><span>Generate Merkle block proof</span></div>
+            <div><i data-lucide="server"></i><span>Confirm through 2-of-3 validators</span></div>
+        </div>
+        <div class="confirmation-animation" aria-hidden="true">
+            <span></span><span></span><span></span>
+        </div>
+    </aside>
+</div>
+
+<div class="modal fade" id="confirmVoteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-glass">
+            <div class="modal-header">
+                <h5 class="modal-title"><i data-lucide="shield-question"></i> Confirm signed vote</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>This will create a signed vote transaction and request validator consensus. The action cannot be changed after confirmation.</p>
+                <div class="tx-preview-box">
+                    <span>voter_hash</span><code>sha256({{ voter.voter_id }})</code>
+                    <span>signature</span><code>ECDSA over transaction hash</code>
+                    <span>consensus</span><code>2 of 3 validator approval</code>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-ghost" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="voteForm" class="btn-premium"><i data-lucide="send"></i> Cast Vote</button>
+            </div>
         </div>
     </div>
 </div>

@@ -24,6 +24,22 @@ ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
 
 
+@app.context_processor
+def inject_shell_context():
+    """Small UI context layer for the dashboard shell."""
+
+    try:
+        shell_health = voting_chain.chain_health()
+    except Exception:
+        shell_health = {"is_valid": False, "status": "CHECK UNAVAILABLE", "nodes": {}, "errors": []}
+    return {
+        "shell_health": shell_health,
+        "shell_election_active": db.is_election_active(),
+        "shell_node_count": len(shell_health.get("nodes", {})),
+        "shell_user_label": session.get("voter_name") or ("Admin" if session.get("admin") else "Guest"),
+    }
+
+
 def voter_required(route):
     @wraps(route)
     def wrapper(*args, **kwargs):
@@ -184,6 +200,19 @@ def results():
     metrics.update(voting_chain.storage_metrics())
     metrics.update(voting_chain.consensus_comparison_metrics())
     return render_template("results.html", results=vote_totals, metrics=metrics, health=voting_chain.chain_health())
+
+
+@app.route("/metrics")
+def metrics_dashboard():
+    metrics = db.performance_metrics()
+    metrics.update(voting_chain.storage_metrics())
+    metrics.update(voting_chain.consensus_comparison_metrics())
+    return render_template("metrics.html", metrics=metrics, health=voting_chain.chain_health())
+
+
+@app.route("/settings")
+def settings():
+    return render_template("settings.html")
 
 
 @app.route("/admin/simulate-tamper", methods=["POST"])

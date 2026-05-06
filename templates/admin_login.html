@@ -1,16 +1,34 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="auth-shell">
-    <section class="auth-panel">
+<section class="auth-card admin-auth">
+    <div class="auth-visual">
+        <div class="chain-radar">
+            <i data-lucide="shield-check"></i>
+        </div>
+        <span class="security-tag"><i data-lucide="server-cog"></i> Control center</span>
+        <span class="security-tag secondary"><i data-lucide="activity"></i> Research metrics</span>
+    </div>
+    <div class="auth-copy">
         <p class="eyebrow">Election administration</p>
-        <h1>Admin Login</h1>
-        <form method="post" class="mt-4">
-            <label class="form-label">Username</label>
-            <input name="username" class="form-control" value="admin" required>
-            <label class="form-label mt-3">Password</label>
-            <input type="password" name="password" class="form-control" placeholder="admin123" required>
-            <button class="btn btn-dark w-100 mt-4">Open Dashboard</button>
-        </form>
-    </section>
-</div>
+        <h1>Admin Console</h1>
+        <p>Manage voters, candidates, election status, validator health, and tamper-detection demos.</p>
+    </div>
+    <form method="post" class="auth-form" data-validate-form>
+        <label class="field-label" for="username">Username</label>
+        <div class="input-shell">
+            <i data-lucide="user-cog"></i>
+            <input id="username" name="username" value="admin" required>
+        </div>
+        <label class="field-label" for="admin_password">Password</label>
+        <div class="input-shell">
+            <i data-lucide="lock-keyhole"></i>
+            <input id="admin_password" type="password" name="password" placeholder="admin123" required>
+        </div>
+        <button class="btn-premium w-100" type="submit"><i data-lucide="scan-face"></i> Open Control Center</button>
+    </form>
+    <div class="auth-footer">
+        <span>Default: admin / admin123</span>
+        <a href="{{ url_for('login') }}">Voter login</a>
+    </div>
+</section>
 {% endblock %}

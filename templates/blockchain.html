@@ -1,54 +1,124 @@
 {% extends "base.html" %}
+{% block page_title %}Blockchain Explorer{% endblock %}
 {% block content %}
-<div class="page-heading">
+<div class="hero-panel explorer-hero">
     <div>
         <p class="eyebrow">Immutable audit trail</p>
-        <h1>Blockchain Explorer</h1>
+        <h2>Live blockchain integrity explorer</h2>
+        <p>Inspect Merkle roots, validator approvals, transaction signatures, node synchronization status, and tamper-detection results.</p>
     </div>
-    <span class="status-pill {{ 'on' if health.is_valid else 'off' }}">{{ health.status }}</span>
+    <span class="status-orb {{ 'valid' if health.is_valid else 'danger' }}">
+        <i data-lucide="{{ 'shield-check' if health.is_valid else 'shield-alert' }}"></i>
+        {{ health.status }}
+    </span>
 </div>
 
-{% for block in blocks %}
-<section class="block-panel">
-    <div class="block-head">
-        <div><strong>Block #{{ block.index }}</strong><span>{{ block.timestamp }}</span></div>
-        <span>{{ block.transactions|length }} transaction(s)</span>
-    </div>
-    <div class="hash-row"><span>Merkle</span><code>{{ block.merkle_root }}</code></div>
-    <div class="hash-row"><span>Previous</span><code>{{ block.previous_hash }}</code></div>
-    <div class="hash-row"><span>Current</span><code>{{ block.current_hash }}</code></div>
-    <div class="validator-strip">
-        {% for node, vote in block.validator_votes.items() %}
-            <span class="validator-badge">{{ node }}: {{ vote }}</span>
-        {% endfor %}
-    </div>
-    <div class="table-responsive mt-3">
-        <table class="table table-sm">
-            <thead><tr><th>Transaction ID</th><th>Voter Hash</th><th>Candidate</th><th>Signature</th><th>Hash</th></tr></thead>
-            <tbody>
-            {% for tx in block.transactions %}
-                <tr>
-                    <td><code>{{ tx.transaction_id }}</code></td>
-                    <td><code>{{ tx.voter_hash[:18] }}...</code></td>
-                    <td>{{ tx.candidate }}</td>
-                    <td><code>{{ (tx.signature|default('missing'))[:18] }}...</code></td>
-                    <td><code>{{ tx.transaction_hash[:18] }}...</code></td>
-                </tr>
-            {% else %}
-                <tr><td colspan="5" class="text-secondary">Genesis block</td></tr>
+{% if not health.is_valid %}
+    <section class="alert-panel danger">
+        <i data-lucide="triangle-alert"></i>
+        <div>
+            <strong>Tamper detection alert</strong>
+            {% for error in health.errors %}
+                <p>{{ error }}</p>
             {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    <div class="node-grid mt-3">
-        {% for node, status in block.node_status.items() %}
-            <div class="node-card">
-                <strong>{{ node }}</strong>
-                <span>{{ "valid" if status.valid else "invalid" }}</span>
-                <small>{{ status.message }}</small>
-            </div>
-        {% endfor %}
-    </div>
+        </div>
+    </section>
+{% endif %}
+
+<section class="chain-visualization" aria-label="Blockchain visualization">
+    {% for block in blocks %}
+        <button class="chain-node {{ 'genesis' if block.index == 0 else '' }}" data-scroll-target="block-{{ block.index }}">
+            <span>{{ block.index }}</span>
+            <small>{{ block.transactions|length }} tx</small>
+        </button>
+    {% endfor %}
 </section>
+
+<div class="block-timeline">
+{% for block in blocks %}
+    <article class="block-card" id="block-{{ block.index }}">
+        <button class="block-summary" type="button" data-bs-toggle="collapse" data-bs-target="#blockDetails{{ block.index }}" aria-expanded="{{ 'true' if loop.last else 'false' }}">
+            <span class="block-icon"><i data-lucide="{{ 'box' if block.index == 0 else 'boxes' }}"></i></span>
+            <span>
+                <strong>Block #{{ block.index }}</strong>
+                <small>{{ block.timestamp }} · {{ block.transactions|length }} transaction(s)</small>
+            </span>
+            <span class="validator-mini">
+                {% for node, vote in block.validator_votes.items() %}
+                    <em class="{{ 'ok' if vote == 'approved' or vote == 'genesis' else 'danger' }}"></em>
+                {% endfor %}
+            </span>
+            <i data-lucide="chevron-down"></i>
+        </button>
+
+        <div class="collapse {{ 'show' if loop.last else '' }}" id="blockDetails{{ block.index }}">
+            <div class="block-details">
+                <div class="hash-grid">
+                    <div><span>Current Hash</span><code>{{ block.current_hash }}</code><button class="copy-btn" data-copy="{{ block.current_hash }}"><i data-lucide="copy"></i></button></div>
+                    <div><span>Previous Hash</span><code>{{ block.previous_hash }}</code><button class="copy-btn" data-copy="{{ block.previous_hash }}"><i data-lucide="copy"></i></button></div>
+                    <div><span>Merkle Root</span><code>{{ block.merkle_root }}</code><button class="copy-btn" data-copy="{{ block.merkle_root }}"><i data-lucide="copy"></i></button></div>
+                </div>
+
+                <div class="validator-strip">
+                    {% for node, vote in block.validator_votes.items() %}
+                        <span class="validator-badge {{ 'ok' if vote == 'approved' or vote == 'genesis' else 'danger' }}"><i data-lucide="server"></i>{{ node }} · {{ vote }}</span>
+                    {% endfor %}
+                </div>
+
+                <div class="node-grid mt-3">
+                    {% for node, status in block.node_status.items() %}
+                        <div class="node-card">
+                            <strong>{{ node }}</strong>
+                            <span>{{ "valid" if status.valid else "invalid" }}</span>
+                            <small>{{ status.message }}</small>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="table-responsive mt-4">
+                    <table class="data-table">
+                        <thead><tr><th>Transaction</th><th>Voter Hash</th><th>Candidate</th><th>Signature</th><th>Hash</th><th></th></tr></thead>
+                        <tbody>
+                        {% for tx in block.transactions %}
+                            <tr>
+                                <td><code>{{ tx.transaction_id[:16] }}...</code></td>
+                                <td><code>{{ tx.voter_hash[:18] }}...</code></td>
+                                <td>{{ tx.candidate }}</td>
+                                <td><code>{{ (tx.signature|default('missing'))[:18] }}...</code></td>
+                                <td><code>{{ tx.transaction_hash[:18] }}...</code></td>
+                                <td><button class="icon-btn" data-bs-toggle="modal" data-bs-target="#txModal{{ block.index }}{{ loop.index }}"><i data-lucide="scan-search"></i></button></td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="6" class="text-muted">Genesis block contains no vote transactions.</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </article>
+
+    {% for tx in block.transactions %}
+    <div class="modal fade" id="txModal{{ block.index }}{{ loop.index }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content modal-glass">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i data-lucide="scan-search"></i> Transaction inspection</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="tx-preview-box expanded">
+                        <span>transaction_id</span><code>{{ tx.transaction_id }}</code>
+                        <span>voter_hash</span><code>{{ tx.voter_hash }}</code>
+                        <span>candidate</span><code>{{ tx.candidate }}</code>
+                        <span>signature</span><code>{{ tx.signature|default('missing') }}</code>
+                        <span>transaction_hash</span><code>{{ tx.transaction_hash }}</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
 {% endfor %}
+</div>
 {% endblock %}

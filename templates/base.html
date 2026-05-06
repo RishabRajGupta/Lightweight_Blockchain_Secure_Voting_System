@@ -1,44 +1,107 @@
+{% set is_auth_page = request.endpoint in ['login', 'admin_login'] %}
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ title or "Lightweight Blockchain Voting" }}</title>
+    <title>{{ title or "SecureVote Chain" }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
 </head>
-<body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-ink">
-    <div class="container">
-        <a class="navbar-brand fw-semibold" href="{{ url_for('results') }}">SecureVote Chain</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="nav">
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="{{ url_for('vote') }}">Vote</a>
-                <a class="nav-link" href="{{ url_for('blockchain_explorer') }}">Blockchain</a>
-                <a class="nav-link" href="{{ url_for('results') }}">Results</a>
-                <a class="nav-link" href="{{ url_for('admin_dashboard') }}">Admin</a>
-                <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+<body class="{{ 'auth-body' if is_auth_page else 'dashboard-body' }}">
+{% if is_auth_page %}
+    <div class="auth-orbit" aria-hidden="true"><span></span><span></span><span></span></div>
+    <main class="auth-main">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="toast-stack">
+                    {% for category, message in messages %}
+                        <div class="app-toast {{ category }}"><i data-lucide="shield-alert"></i><span>{{ message }}</span></div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+{% else %}
+    <button class="mobile-menu-btn" type="button" data-sidebar-toggle aria-label="Toggle navigation">
+        <i data-lucide="menu"></i>
+    </button>
+    <div class="app-shell">
+        <aside class="sidebar" id="sidebar">
+            <a class="brand-lockup" href="{{ url_for('results') }}">
+                <span class="brand-mark"><i data-lucide="boxes"></i></span>
+                <span><strong>SecureVote</strong><small>Research Chain</small></span>
+            </a>
+            <button class="sidebar-collapse-btn" type="button" data-sidebar-collapse aria-label="Collapse sidebar">
+                <i data-lucide="panel-left-close"></i>
+                <span>Collapse</span>
+            </button>
+            <nav class="sidebar-nav" aria-label="Primary navigation">
+                <a class="nav-item {{ 'active' if request.endpoint == 'results' else '' }}" href="{{ url_for('results') }}"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></a>
+                <a class="nav-item {{ 'active' if request.endpoint == 'vote' else '' }}" href="{{ url_for('vote') }}"><i data-lucide="vote"></i><span>Vote</span></a>
+                <a class="nav-item {{ 'active' if request.endpoint == 'blockchain_explorer' else '' }}" href="{{ url_for('blockchain_explorer') }}"><i data-lucide="blocks"></i><span>Blockchain Explorer</span></a>
+                <a class="nav-item" href="{{ url_for('results') }}"><i data-lucide="bar-chart-3"></i><span>Results</span></a>
+                <a class="nav-item {{ 'active' if request.endpoint == 'metrics_dashboard' else '' }}" href="{{ url_for('metrics_dashboard') }}"><i data-lucide="activity"></i><span>Metrics</span></a>
+                <a class="nav-item {{ 'active' if request.endpoint == 'admin_dashboard' else '' }}" href="{{ url_for('admin_dashboard') }}"><i data-lucide="shield-check"></i><span>Admin</span></a>
+                <a class="nav-item {{ 'active' if request.endpoint == 'settings' else '' }}" href="{{ url_for('settings') }}"><i data-lucide="settings"></i><span>Settings</span></a>
+            </nav>
+            <div class="sidebar-card">
+                <span class="mini-label">Chain Integrity</span>
+                <strong class="{{ 'text-ok' if shell_health.is_valid else 'text-danger-soft' }}">{{ shell_health.status }}</strong>
+                <div class="micro-chain" aria-hidden="true"><span></span><span></span><span></span></div>
             </div>
+            <a class="nav-item logout-link" href="{{ url_for('logout') }}"><i data-lucide="log-out"></i><span>Logout</span></a>
+        </aside>
+
+        <div class="shell-main">
+            <header class="topbar">
+                <div>
+                    <span class="mini-label">Lightweight Blockchain Voting</span>
+                    <h1>{% block page_title %}Research Dashboard{% endblock %}</h1>
+                </div>
+                <div class="topbar-actions">
+                    <span class="status-chip {{ 'ok' if shell_health.is_valid else 'danger' }}"><i data-lucide="shield"></i>{{ shell_health.status }}</span>
+                    <span class="status-chip {{ 'ok' if shell_election_active else 'danger' }}"><i data-lucide="radio-tower"></i>{{ "Election Live" if shell_election_active else "Election Paused" }}</span>
+                    <span class="status-chip"><i data-lucide="server"></i>{{ shell_node_count }} Nodes</span>
+                    <button class="icon-btn" type="button" data-theme-toggle aria-label="Toggle light and dark mode"><i data-lucide="sun-moon"></i></button>
+                    <div class="profile-pill"><i data-lucide="user-round"></i><span>{{ shell_user_label }}</span></div>
+                </div>
+            </header>
+
+            <main class="content">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <div class="toast-stack">
+                            {% for category, message in messages %}
+                                <div class="app-toast {{ category }}">
+                                    <i data-lucide="bell"></i>
+                                    <span>{{ message }}</span>
+                                    <button type="button" data-toast-close aria-label="Dismiss"><i data-lucide="x"></i></button>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+                <section class="page-transition">
+{% endif %}
+
+{% block content %}{% endblock %}
+
+{% if is_auth_page %}
+    </main>
+{% else %}
+                </section>
+            </main>
         </div>
     </div>
-</nav>
-
-<main class="container py-4">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% for category, message in messages %}
-            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        {% endfor %}
-    {% endwith %}
-    {% block content %}{% endblock %}
-</main>
+{% endif %}
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
 </body>
 </html>

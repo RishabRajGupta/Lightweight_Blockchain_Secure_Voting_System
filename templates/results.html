@@ -1,37 +1,58 @@
 {% extends "base.html" %}
+{% block page_title %}Results Dashboard{% endblock %}
 {% block content %}
-<div class="page-heading">
+{% set total_votes = results.values()|sum %}
+{% set sorted_results = results.items()|sort(attribute='1', reverse=true) %}
+<div class="hero-panel">
     <div>
         <p class="eyebrow">Transparent blockchain count</p>
-        <h1>Results Dashboard</h1>
+        <h2>Election results from confirmed blocks</h2>
+        <p>Every number on this dashboard is calculated directly from verified blockchain transactions.</p>
     </div>
-    <span class="status-pill {{ 'on' if health.is_valid else 'off' }}">{{ health.status }}</span>
+    <span class="status-orb {{ 'valid' if health.is_valid else 'danger' }}"><i data-lucide="badge-check"></i>{{ health.status }}</span>
 </div>
 
-<div class="row g-4">
-    <div class="col-lg-8">
-        <section class="tool-panel">
-            <h2>Vote Totals</h2>
-            {% set max_votes = results.values()|max if results else 1 %}
-            {% for candidate, total in results.items() %}
-                <div class="result-row">
-                    <div class="d-flex justify-content-between"><strong>{{ candidate }}</strong><span>{{ total }}</span></div>
-                    <div class="progress">
-                        <div class="progress-bar" style="width: {{ (total / max_votes * 100) if max_votes else 0 }}%"></div>
+<div class="metrics-grid">
+    <div class="metric-panel animated-stat"><span>Confirmed votes</span><strong data-count="{{ metrics.confirmed_votes }}">{{ metrics.confirmed_votes }}</strong><small>Blockchain-backed ballots</small></div>
+    <div class="metric-panel animated-stat"><span>Blocks</span><strong data-count="{{ metrics.blocks }}">{{ metrics.blocks }}</strong><small>Including genesis block</small></div>
+    <div class="metric-panel animated-stat"><span>Consensus</span><strong>{{ metrics.avg_consensus_time_ms }} ms</strong><small>Average validator approval</small></div>
+    <div class="metric-panel animated-stat"><span>Storage efficiency</span><strong>{{ metrics.avg_bytes_per_vote }}</strong><small>Average bytes per vote</small></div>
+</div>
+
+<div class="grid-2 mt-4">
+    <section class="surface-panel">
+        <div class="section-head">
+            <div>
+                <p class="eyebrow">Analytics</p>
+                <h3>Vote distribution</h3>
+            </div>
+            <span class="verification-badge"><i data-lucide="blocks"></i> Chain confirmed</span>
+        </div>
+        <canvas id="resultsChart" class="chart-canvas" data-labels='{{ results.keys()|list|tojson }}' data-values='{{ results.values()|list|tojson }}'></canvas>
+    </section>
+
+    <section class="surface-panel">
+        <div class="section-head">
+            <div>
+                <p class="eyebrow">Ranking</p>
+                <h3>Candidate leaderboard</h3>
+            </div>
+            <span class="mini-label">{{ total_votes }} total vote(s)</span>
+        </div>
+        <div class="ranking-list">
+            {% for candidate, total in sorted_results %}
+                {% set pct = (total / total_votes * 100) if total_votes else 0 %}
+                <div class="ranking-card">
+                    <span class="candidate-avatar">{{ candidate[:1] }}</span>
+                    <div>
+                        <strong>{{ candidate }}</strong>
+                        <div class="progress-track"><span data-progress="{{ pct }}"></span></div>
                     </div>
+                    <em>{{ "%.1f"|format(pct) }}%</em>
+                    <b>{{ total }}</b>
                 </div>
             {% endfor %}
-        </section>
-    </div>
-    <div class="col-lg-4">
-        <div class="metrics-grid single">
-            <div class="metric-panel"><div class="metric-label">Blocks</div><div class="metric-value">{{ metrics.blocks }}</div></div>
-            <div class="metric-panel"><div class="metric-label">Confirmed votes</div><div class="metric-value">{{ metrics.confirmed_votes }}</div></div>
-            <div class="metric-panel"><div class="metric-label">Validation time</div><div class="metric-value">{{ metrics.avg_validation_time_ms }} ms</div></div>
-            <div class="metric-panel"><div class="metric-label">Signature check</div><div class="metric-value">{{ metrics.avg_signature_verification_time_ms }} ms</div></div>
-            <div class="metric-panel"><div class="metric-label">Consensus time</div><div class="metric-value">{{ metrics.avg_consensus_time_ms }} ms</div></div>
-            <div class="metric-panel"><div class="metric-label">PoW baseline</div><div class="metric-value">{{ metrics.pow_baseline_time_ms }} ms</div></div>
         </div>
-    </div>
+    </section>
 </div>
 {% endblock %}

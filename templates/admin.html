@@ -1,103 +1,135 @@
 {% extends "base.html" %}
+{% block page_title %}Admin Control Center{% endblock %}
 {% block content %}
-<div class="page-heading">
+<div class="hero-panel admin-hero">
     <div>
         <p class="eyebrow">Private blockchain control panel</p>
-        <h1>Admin Dashboard</h1>
+        <h2>Election operations and validator health</h2>
+        <p>Manage voters, candidates, election state, simulated node ledgers, and tamper-detection demonstrations.</p>
     </div>
-    <form method="post" action="{{ url_for('election_action', action='stop' if election_active else 'start') }}">
-        <button class="btn {{ 'btn-outline-danger' if election_active else 'btn-success' }}">{{ "Stop Election" if election_active else "Start Election" }}</button>
-    </form>
-</div>
-
-<div class="metrics-grid">
-    <div class="metric-panel"><div class="metric-label">Avg validation</div><div class="metric-value">{{ metrics.avg_validation_time_ms }} ms</div></div>
-    <div class="metric-panel"><div class="metric-label">Avg signature check</div><div class="metric-value">{{ metrics.avg_signature_verification_time_ms }} ms</div></div>
-    <div class="metric-panel"><div class="metric-label">Avg block creation</div><div class="metric-value">{{ metrics.avg_block_creation_time_ms }} ms</div></div>
-    <div class="metric-panel"><div class="metric-label">Avg verification</div><div class="metric-value">{{ metrics.avg_block_verification_time_ms }} ms</div></div>
-    <div class="metric-panel"><div class="metric-label">Avg consensus</div><div class="metric-value">{{ metrics.avg_consensus_time_ms }} ms</div></div>
-    <div class="metric-panel"><div class="metric-label">Storage</div><div class="metric-value">{{ metrics.chain_storage_bytes }} bytes</div></div>
+    <div class="hero-actions">
+        <form method="post" action="{{ url_for('election_action', action='stop' if election_active else 'start') }}">
+            <button class="btn-premium {{ 'danger' if election_active else '' }}"><i data-lucide="{{ 'pause-circle' if election_active else 'play-circle' }}"></i>{{ "Stop Election" if election_active else "Start Election" }}</button>
+        </form>
+        <form method="post" action="{{ url_for('simulate_tamper') }}">
+            <button class="btn-ghost danger"><i data-lucide="shield-alert"></i> Simulate Tampering</button>
+        </form>
+    </div>
 </div>
 
 <section class="health-panel {{ 'valid' if health.is_valid else 'tampered' }}">
+    <i data-lucide="{{ 'shield-check' if health.is_valid else 'triangle-alert' }}"></i>
     <div>
         <p class="eyebrow">Blockchain health monitor</p>
-        <h2>Blockchain Status: {{ health.status }}</h2>
+        <h3>Blockchain Status: {{ health.status }}</h3>
         {% if health.errors %}
-            <ul class="mb-0">
-                {% for error in health.errors %}
-                    <li>{{ error }}</li>
-                {% endfor %}
-            </ul>
+            {% for error in health.errors %}<p>{{ error }}</p>{% endfor %}
         {% else %}
-            <p class="mb-0">All blocks, hashes, signatures, Merkle roots, and ordering checks are valid.</p>
+            <p>All blocks, hashes, signatures, Merkle roots, and ordering checks are valid.</p>
         {% endif %}
     </div>
-    <form method="post" action="{{ url_for('simulate_tamper') }}">
-        <button class="btn btn-outline-danger">Simulate Tampering</button>
-    </form>
 </section>
 
-<div class="row g-4 mt-1">
-    <div class="col-lg-6">
-        <section class="tool-panel">
-            <h2>Register Voter</h2>
-            <form method="post" action="{{ url_for('register_voter') }}" class="row g-3">
-                <div class="col-md-4"><input name="voter_id" class="form-control" placeholder="Voter ID" required></div>
-                <div class="col-md-4"><input name="name" class="form-control" placeholder="Name" required></div>
-                <div class="col-md-4"><input name="password" class="form-control" placeholder="Password" required></div>
-                <div class="col-12"><button class="btn btn-primary">Register</button></div>
+<div class="metrics-grid">
+    <div class="metric-panel animated-stat"><span>Validation</span><strong>{{ metrics.avg_validation_time_ms }} ms</strong><small>Avg transaction validation</small></div>
+    <div class="metric-panel animated-stat"><span>Signature check</span><strong>{{ metrics.avg_signature_verification_time_ms }} ms</strong><small>Avg ECDSA verification</small></div>
+    <div class="metric-panel animated-stat"><span>Consensus</span><strong>{{ metrics.avg_consensus_time_ms }} ms</strong><small>2-of-3 validator vote</small></div>
+    <div class="metric-panel animated-stat"><span>PoW baseline</span><strong>{{ metrics.pow_baseline_time_ms }} ms</strong><small>{{ metrics.validator_speedup }}x speedup estimate</small></div>
+</div>
+
+<div class="grid-2 mt-4">
+    <section class="surface-panel">
+        <div class="section-head">
+            <div><p class="eyebrow">Voter registry</p><h3>Manage voter identities</h3></div>
+            <button class="btn-premium" data-bs-toggle="modal" data-bs-target="#voterModal"><i data-lucide="user-plus"></i> Add voter</button>
+        </div>
+        <div class="table-tools">
+            <div class="input-shell compact"><i data-lucide="search"></i><input data-table-search="#votersTable" placeholder="Search voters"></div>
+        </div>
+        <div class="table-responsive">
+            <table class="data-table" id="votersTable">
+                <thead><tr><th>Voter ID</th><th>Name</th><th>Public Key</th><th>Status</th></tr></thead>
+                <tbody>
+                {% for voter in voters %}
+                    <tr>
+                        <td>{{ voter.voter_id }}</td>
+                        <td>{{ voter.name }}</td>
+                        <td><code>{{ voter.public_key[:32] }}...</code></td>
+                        <td><span class="status-chip {{ 'ok' if voter.has_voted else '' }}">{{ "Voted" if voter.has_voted else "Ready" }}</span></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="surface-panel">
+        <div class="section-head">
+            <div><p class="eyebrow">Candidate slate</p><h3>Election candidates</h3></div>
+            <button class="btn-premium" data-bs-toggle="modal" data-bs-target="#candidateModal"><i data-lucide="badge-plus"></i> Add candidate</button>
+        </div>
+        <div class="candidate-admin-list">
+            {% for candidate in candidates %}
+                <div class="ranking-card">
+                    <span class="candidate-avatar">{{ candidate.name[:1] }}</span>
+                    <strong>{{ candidate.name }}</strong>
+                    <span class="verification-badge"><i data-lucide="check"></i> Registered</span>
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+
+<div class="grid-2 mt-4">
+    <section class="surface-panel">
+        <div class="section-head">
+            <div><p class="eyebrow">Validator monitoring</p><h3>Simulated node ledgers</h3></div>
+            <span class="mini-label">Majority threshold: 2/3</span>
+        </div>
+        <div class="node-grid">
+            {% for node, status in health.nodes.items() %}
+                <div class="node-card node-large">
+                    <i data-lucide="server"></i>
+                    <strong>{{ node }}</strong>
+                    <span>{{ status.blocks }} synchronized block(s)</span>
+                    <small>{{ "Valid ledger copy" if status.all_valid else "Needs review" }}</small>
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+    <section class="surface-panel">
+        <div class="section-head">
+            <div><p class="eyebrow">Research benchmark</p><h3>Lightweight vs traditional</h3></div>
+        </div>
+        <canvas id="benchmarkChart" class="chart-canvas compact-chart" data-validator="{{ metrics.avg_consensus_time_ms }}" data-pow="{{ metrics.pow_baseline_time_ms }}"></canvas>
+    </section>
+</div>
+
+<div class="modal fade" id="voterModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-glass">
+            <form method="post" action="{{ url_for('register_voter') }}">
+                <div class="modal-header"><h5 class="modal-title">Register voter</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body form-grid">
+                    <input name="voter_id" class="form-control" placeholder="Voter ID" required>
+                    <input name="name" class="form-control" placeholder="Name" required>
+                    <input name="password" class="form-control" placeholder="Password" required>
+                </div>
+                <div class="modal-footer"><button class="btn-premium"><i data-lucide="user-plus"></i> Register</button></div>
             </form>
-            <div class="table-responsive mt-3">
-                <table class="table align-middle">
-                    <thead><tr><th>Voter ID</th><th>Name</th><th>Public Key</th><th>Status</th></tr></thead>
-                    <tbody>
-                    {% for voter in voters %}
-                        <tr>
-                            <td>{{ voter.voter_id }}</td>
-                            <td>{{ voter.name }}</td>
-                            <td><code>{{ voter.public_key[:28] }}...</code></td>
-                            <td>{{ "Voted" if voter.has_voted else "Not voted" }}</td>
-                        </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </section>
+        </div>
     </div>
-    <div class="col-lg-6">
-        <section class="tool-panel">
-            <h2>Candidates</h2>
-            <form method="post" action="{{ url_for('add_candidate') }}" class="input-group">
-                <input name="name" class="form-control" placeholder="Candidate name" required>
-                <button class="btn btn-dark">Add</button>
+</div>
+
+<div class="modal fade" id="candidateModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-glass">
+            <form method="post" action="{{ url_for('add_candidate') }}">
+                <div class="modal-header"><h5 class="modal-title">Add candidate</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body"><input name="name" class="form-control" placeholder="Candidate name" required></div>
+                <div class="modal-footer"><button class="btn-premium"><i data-lucide="badge-plus"></i> Add candidate</button></div>
             </form>
-            <div class="list-group mt-3">
-                {% for candidate in candidates %}
-                    <div class="list-group-item">{{ candidate.name }}</div>
-                {% endfor %}
-            </div>
-        </section>
-        <section class="tool-panel mt-4">
-            <h2>Research Metrics</h2>
-            <p class="mb-1">Confirmed transactions: {{ metrics.confirmed_transactions }}</p>
-            <p class="mb-1">Average bytes per vote: {{ metrics.avg_bytes_per_vote }}</p>
-            <p class="mb-1">PoW baseline time: {{ metrics.pow_baseline_time_ms }} ms</p>
-            <p class="mb-1">Validator speedup estimate: {{ metrics.validator_speedup }}x</p>
-            <p class="mb-0">Duplicate prevention: {{ metrics.duplicate_vote_prevention_accuracy }}</p>
-        </section>
-        <section class="tool-panel mt-4">
-            <h2>Simulated Node Ledgers</h2>
-            <div class="node-grid">
-                {% for node, status in health.nodes.items() %}
-                    <div class="node-card">
-                        <strong>{{ node }}</strong>
-                        <span>{{ status.blocks }} block(s)</span>
-                        <small>{{ "Valid" if status.all_valid else "Needs review" }}</small>
-                    </div>
-                {% endfor %}
-            </div>
-        </section>
+        </div>
     </div>
 </div>
 {% endblock %}
