@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-heading">
+    <div>
+        <p class="eyebrow">Private blockchain control panel</p>
+        <h1>Admin Dashboard</h1>
+    </div>
+    <form method="post" action="{{ url_for('election_action', action='stop' if election_active else 'start') }}">
+        <button class="btn {{ 'btn-outline-danger' if election_active else 'btn-success' }}">{{ "Stop Election" if election_active else "Start Election" }}</button>
+    </form>
+</div>
+
+<div class="metrics-grid">
+    <div class="metric-panel"><div class="metric-label">Avg validation</div><div class="metric-value">{{ metrics.avg_validation_time_ms }} ms</div></div>
+    <div class="metric-panel"><div class="metric-label">Avg block creation</div><div class="metric-value">{{ metrics.avg_block_creation_time_ms }} ms</div></div>
+    <div class="metric-panel"><div class="metric-label">Avg verification</div><div class="metric-value">{{ metrics.avg_block_verification_time_ms }} ms</div></div>
+    <div class="metric-panel"><div class="metric-label">Storage</div><div class="metric-value">{{ metrics.chain_storage_bytes }} bytes</div></div>
+</div>
+
+<div class="row g-4 mt-1">
+    <div class="col-lg-6">
+        <section class="tool-panel">
+            <h2>Register Voter</h2>
+            <form method="post" action="{{ url_for('register_voter') }}" class="row g-3">
+                <div class="col-md-4"><input name="voter_id" class="form-control" placeholder="Voter ID" required></div>
+                <div class="col-md-4"><input name="name" class="form-control" placeholder="Name" required></div>
+                <div class="col-md-4"><input name="password" class="form-control" placeholder="Password" required></div>
+                <div class="col-12"><button class="btn btn-primary">Register</button></div>
+            </form>
+            <div class="table-responsive mt-3">
+                <table class="table align-middle">
+                    <thead><tr><th>Voter ID</th><th>Name</th><th>Status</th></tr></thead>
+                    <tbody>
+                    {% for voter in voters %}
+                        <tr><td>{{ voter.voter_id }}</td><td>{{ voter.name }}</td><td>{{ "Voted" if voter.has_voted else "Not voted" }}</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+    <div class="col-lg-6">
+        <section class="tool-panel">
+            <h2>Candidates</h2>
+            <form method="post" action="{{ url_for('add_candidate') }}" class="input-group">
+                <input name="name" class="form-control" placeholder="Candidate name" required>
+                <button class="btn btn-dark">Add</button>
+            </form>
+            <div class="list-group mt-3">
+                {% for candidate in candidates %}
+                    <div class="list-group-item">{{ candidate.name }}</div>
+                {% endfor %}
+            </div>
+        </section>
+        <section class="tool-panel mt-4">
+            <h2>Research Metrics</h2>
+            <p class="mb-1">Confirmed transactions: {{ metrics.confirmed_transactions }}</p>
+            <p class="mb-1">Average bytes per vote: {{ metrics.avg_bytes_per_vote }}</p>
+            <p class="mb-0">Duplicate prevention: {{ metrics.duplicate_vote_prevention_accuracy }}</p>
+        </section>
+    </div>
+</div>
+{% endblock %}

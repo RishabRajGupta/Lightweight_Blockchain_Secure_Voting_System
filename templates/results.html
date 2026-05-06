@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-heading">
+    <div>
+        <p class="eyebrow">Transparent blockchain count</p>
+        <h1>Results Dashboard</h1>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <section class="tool-panel">
+            <h2>Vote Totals</h2>
+            {% set max_votes = results.values()|max if results else 1 %}
+            {% for candidate, total in results.items() %}
+                <div class="result-row">
+                    <div class="d-flex justify-content-between"><strong>{{ candidate }}</strong><span>{{ total }}</span></div>
+                    <div class="progress">
+                        <div class="progress-bar" style="width: {{ (total / max_votes * 100) if max_votes else 0 }}%"></div>
+                    </div>
+                </div>
+            {% endfor %}
+        </section>
+    </div>
+    <div class="col-lg-4">
+        <div class="metrics-grid single">
+            <div class="metric-panel"><div class="metric-label">Blocks</div><div class="metric-value">{{ metrics.blocks }}</div></div>
+            <div class="metric-panel"><div class="metric-label">Confirmed votes</div><div class="metric-value">{{ metrics.confirmed_votes }}</div></div>
+            <div class="metric-panel"><div class="metric-label">Validation time</div><div class="metric-value">{{ metrics.avg_validation_time_ms }} ms</div></div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-heading">
+    <div>
+        <p class="eyebrow">Authenticated voter</p>
+        <h1>Cast Vote</h1>
+    </div>
+    <span class="status-pill {{ 'on' if election_active else 'off' }}">{{ "Election Active" if election_active else "Election Stopped" }}</span>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="tool-panel">
+            {% if voter.has_voted %}
+                <div class="empty-state">
+                    <h2>Your vote has already been recorded.</h2>
+                    <p>The duplicate-vote validator will reject any further vote from this voter ID.</p>
+                </div>
+            {% else %}
+                <form method="post">
+                    <div class="candidate-grid">
+                        {% for candidate in candidates %}
+                            <label class="candidate-card">
+                                <input type="radio" name="candidate" value="{{ candidate.name }}" required>
+                                <span>{{ candidate.name }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                    <button class="btn btn-primary mt-4" {% if not election_active %}disabled{% endif %}>Validate Transaction and Add Block</button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="metric-panel">
+            <div class="metric-label">Voter identity stored on-chain</div>
+            <div class="metric-value">SHA-256 hash</div>
+            <p class="small text-secondary mb-0">Plain voter details remain outside blockchain transactions.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

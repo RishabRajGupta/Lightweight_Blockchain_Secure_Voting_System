@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="auth-shell">
+    <section class="auth-panel">
+        <p class="eyebrow">Research prototype</p>
+        <h1>Lightweight Blockchain Secure Voting</h1>
+        <p class="text-secondary">Private blockchain voting with efficient transaction validation and simplified block verification.</p>
+        <form method="post" class="mt-4">
+            <label class="form-label">Voter ID</label>
+            <input name="voter_id" class="form-control" placeholder="VOTER001" required>
+            <label class="form-label mt-3">Password</label>
+            <input type="password" name="password" class="form-control" placeholder="password123" required>
+            <button class="btn btn-primary w-100 mt-4">Login as Voter</button>
+        </form>
+        <div class="small text-secondary mt-3">Sample voters: VOTER001, VOTER002, VOTER003. Password: password123.</div>
+        <a class="btn btn-link px-0 mt-2" href="{{ url_for('admin_login') }}">Admin login</a>
+    </section>
+</div>
+{% endblock %}
