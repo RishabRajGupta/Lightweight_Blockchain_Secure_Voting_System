@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="auth-shell">
+    <section class="auth-panel">
+        <p class="eyebrow">Election administration</p>
+        <h1>Admin Login</h1>
+        <form method="post" class="mt-4">
+            <label class="form-label">Username</label>
+            <input name="username" class="form-control" value="admin" required>
+            <label class="form-label mt-3">Password</label>
+            <input type="password" name="password" class="form-control" placeholder="admin123" required>
+            <button class="btn btn-dark w-100 mt-4">Open Dashboard</button>
+        </form>
+    </section>
+</div>
+{% endblock %}
